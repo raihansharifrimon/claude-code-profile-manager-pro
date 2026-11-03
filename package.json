@@ -2,7 +2,7 @@
   "name": "claude-code-profile-manager-pro",
   "displayName": "Claude Code Profile Manager Pro",
   "description": "Save multiple Claude Code login sessions on your machine and switch between accounts instantly, without signing in again. Community project, not affiliated with Anthropic.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "raihansharifrimon",
   "author": "Raihan Sharif Rimon",
   "license": "MIT",
