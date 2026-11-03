@@ -11,4 +11,6 @@ vitest.config.mjs
 .github/**
 .gitignore
 CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+.editorconfig
 docs/**

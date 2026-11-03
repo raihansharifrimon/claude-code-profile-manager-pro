@@ -1,6 +1,9 @@
 # Contributing
 
-Thanks for helping out!
+Thanks for helping out! By taking part you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+- **Bugs and ideas:** open an issue using one of the templates.
+- **Security problems:** report them privately, as described in [SECURITY.md](SECURITY.md).
 
 ## Setup
 
@@ -27,6 +30,12 @@ Press <kbd>F5</kbd> in VS Code to launch an Extension Development Host.
 
 Keep `accountManager.ts` and the modules it imports free of `vscode` imports so
 they stay testable with plain Node.
+
+## Releasing (maintainer)
+
+1. Update `CHANGELOG.md`, then run `npm version patch` (or `minor` / `major`). This bumps `package.json` and creates a `vX.Y.Z` tag.
+2. `git push --follow-tags`.
+3. The Release workflow tests and packages the extension, creates a GitHub release with the `.vsix` attached, and publishes it to the Marketplace if the `VSCE_PAT` secret is set.
 
 ## Pull requests
 

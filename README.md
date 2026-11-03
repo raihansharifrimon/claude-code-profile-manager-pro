@@ -1,5 +1,10 @@
 # Claude Code Profile Manager Pro
 
+[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/RaihanSharifRimon.claude-code-profile-manager-pro?label=VS%20Code%20Marketplace&color=0078d4)](https://marketplace.visualstudio.com/items?itemName=RaihanSharifRimon.claude-code-profile-manager-pro)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/RaihanSharifRimon.claude-code-profile-manager-pro)](https://marketplace.visualstudio.com/items?itemName=RaihanSharifRimon.claude-code-profile-manager-pro)
+[![CI](https://github.com/raihansharifrimon/claude-code-profile-manager-pro/actions/workflows/ci.yml/badge.svg)](https://github.com/raihansharifrimon/claude-code-profile-manager-pro/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 Save several Claude Code accounts on your machine and switch between them in one click, without signing in again.
 
 ![Claude Accounts view: the active account is marked with a green check, an expired session shows a warning, and a notification offers to reload after switching](docs/images/overview.png)
@@ -83,6 +88,18 @@ Right-click an account and choose **Remove Saved Session**, or run **Claude Acco
 | `claudeSessions.loginCommand` | `claude` | Command run in the terminal when adding an account |
 
 For security, `configDir`, `keychainService` and `loginCommand` can only be set in your user settings, never in a workspace's `.vscode/settings.json`. The extension only runs in trusted workspaces.
+
+## Installation
+
+Search for **Claude Code Profile Manager Pro** in the Extensions view (<kbd>⇧⌘X</kbd> / <kbd>Ctrl+Shift+X</kbd>), or run:
+
+```bash
+code --install-extension RaihanSharifRimon.claude-code-profile-manager-pro
+```
+
+## Contributing
+
+Bug reports, ideas and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md), and please follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Development
 

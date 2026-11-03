@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/raihansharifrimon/claude-code-profile-manager-pro/security/advisories/new
+    about: Please report security issues privately, not as public issues.
+  - name: Questions and ideas
+    url: https://github.com/raihansharifrimon/claude-code-profile-manager-pro/discussions
+    about: Ask questions and share ideas in Discussions.
