@@ -11,6 +11,12 @@ Save several Claude Code accounts on your machine and switch between them in one
 
 > Unofficial community project. Not affiliated with or endorsed by Anthropic.
 
+## Demo
+
+[![Watch the demo video](docs/images/overview.png)](docs/video/claude-code-profile-manager-pro.mp4)
+
+[Watch the demo video](docs/video/claude-code-profile-manager-pro.mp4) (MP4, about 14 MB): saving accounts, switching from the sidebar and status bar, and adding a new account.
+
 ## Features
 
 - **Multiple saved sessions.** Each Claude account you sign in with is saved locally, and you can store as many as you like.
@@ -112,6 +118,8 @@ npm test
 Press <kbd>F5</kbd> to launch an Extension Development Host. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 The images in `docs/images/` are rendered from [docs/screenshots-source.html](docs/screenshots-source.html) using sample accounts. To regenerate one, open the file with `#overview`, `#quickpick` or `#addaccount` at the end of the URL and take a screenshot at 2× scale.
+
+The demo video was recorded from [docs/demo-walkthrough.html](docs/demo-walkthrough.html), a scripted, self-playing walkthrough with placeholder accounts. Open it in a browser and press <kbd>Space</kbd> to pause, <kbd>R</kbd> to restart, or <kbd>←</kbd>/<kbd>→</kbd> to change chapter. Add `#c=7` to the URL to start at a chapter.
 
 Build a `.vsix`:
 

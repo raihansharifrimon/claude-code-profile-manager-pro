@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Claude Code Profile Manager Pro: Demo Walkthrough</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@vscode/codicons@0.0.36/dist/codicon.css">
+<style>
+  /*
+    Scripted, self-playing demo of every feature. Fixed 1280x720 stage, scaled to the window,
+    so a screen recording at 1080p/4K stays sharp. All accounts are placeholders.
+    Keys: Space pause/resume · R restart · ←/→ previous/next chapter · C hide/show captions · H hide hint
+    URL:  #c=7 starts at chapter 7 · ?speed=1.5 plays faster
+  */
+  :root {
+    --bg:#1f1f1f; --side:#181818; --border:#2b2b2b; --fg:#cccccc; --muted:#9d9d9d; --accent:#0078d4;
+    --hover:#2a2d2e; --sel:#04395e; --green:#89d185; --warn:#cca700; --red:#f48771; --input:#313131; --widget:#222222;
+    --clay:#d97757;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html,body { width:100%; height:100%; overflow:hidden; background:#0b0b0d; color:var(--fg);
+    font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+  .codicon { font-size:16px; vertical-align:middle; }
+  #stage { position:absolute; left:50%; top:50%; width:1280px; height:720px; transform-origin:center; overflow:hidden;
+    background:linear-gradient(135deg,#d97757 0%,#8c4a7a 50%,#2c3e7a 100%); }
+
+  /* ---------- VS Code window ---------- */
+  #shell { position:absolute; left:28px; top:20px; width:1224px; height:616px; border-radius:12px; overflow:hidden;
+    background:var(--bg); box-shadow:0 24px 60px #0008; border:1px solid #ffffff22; display:grid; grid-template-rows:30px 1fr 22px; }
+  .titlebar { background:var(--side); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 12px; gap:8px; }
+  .lights { display:flex; gap:8px; } .lights i { width:12px; height:12px; border-radius:50%; display:block; }
+  .cc { margin:0 auto; width:36%; height:20px; border:1px solid #3c3c3c; background:#2a2a2a; border-radius:6px; display:flex;
+    align-items:center; justify-content:center; gap:6px; color:var(--muted); font-size:12px; }
+  .main { display:grid; grid-template-columns:44px 300px 1fr; min-height:0; }
+  .activity { background:var(--side); border-right:1px solid var(--border); display:flex; flex-direction:column; align-items:center; padding-top:2px; }
+  .activity .a { width:44px; height:44px; display:grid; place-items:center; color:#868686; position:relative; }
+  .activity .a .codicon { font-size:22px; } .activity svg { width:22px; height:22px; }
+  .activity .a.on { color:#fff; } .activity .a.on::before { content:""; position:absolute; left:0; top:0; bottom:0; width:2px; background:var(--accent); }
+  .sidebar { background:var(--side); border-right:1px solid var(--border); min-width:0; }
+  .side-title { height:35px; display:flex; align-items:center; padding:0 8px 0 20px; font-size:11px; letter-spacing:.04em; text-transform:uppercase; }
+  .section { height:22px; display:flex; align-items:center; padding:0 8px 0 2px; font-size:11px; font-weight:700; text-transform:uppercase; }
+  .actions { margin-left:auto; display:flex; gap:2px; }
+  .actions .codicon { width:22px; height:22px; display:grid; place-items:center; border-radius:5px; }
+  .actions .codicon.hov { background:#ffffff22; }
+  .spin { animation:spin .8s linear 2; } @keyframes spin { to { transform:rotate(360deg); } }
+  .row { height:24px; display:flex; align-items:center; padding:0 8px 0 22px; gap:6px; white-space:nowrap; position:relative; }
+  .row .desc { color:var(--muted); font-size:12px; margin-left:4px; overflow:hidden; text-overflow:ellipsis; }
+  .row.hov { background:var(--hover); }
+  .row.sel { background:var(--sel); outline:1px solid var(--accent); outline-offset:-1px; }
+  .row .inline { margin-left:auto; display:none; gap:2px; } .row.hov .inline { display:flex; }
+  .row .inline .codicon { width:22px; height:20px; display:grid; place-items:center; border-radius:4px; }
+  .row.pop { animation:pop .7s ease; } @keyframes pop { from { background:#0078d466; transform:translateX(-8px); opacity:0; } to { transform:none; opacity:1; } }
+  .row.gone { animation:gone .5s ease forwards; } @keyframes gone { to { opacity:0; transform:translateX(24px); height:0; } }
+  .green { color:var(--green); } .warn { color:var(--warn); }
+  .welcome { padding:10px 20px; color:var(--fg); line-height:1.6; }
+  .welcome .btn { display:block; text-align:center; margin:8px 0; padding:6px 12px; }
+  .welcome .btn.hov { filter:brightness(1.25); } .welcome p { color:var(--muted); font-size:12px; margin-top:10px; }
+  .editor { min-width:0; background:var(--bg); display:grid; grid-template-rows:35px 1fr; position:relative; }
+  .tabs { background:var(--side); border-bottom:1px solid var(--border); display:flex; }
+  .tab { padding:0 14px; display:flex; align-items:center; gap:6px; border-right:1px solid var(--border); color:var(--muted); }
+  .tab.on { background:var(--bg); color:#fff; border-top:1px solid var(--accent); }
+  .code { padding:10px 0; font:12.5px/19px Menlo,monospace; } .code div { padding-left:64px; position:relative; white-space:pre; }
+  .code div::before { content:attr(data-n); position:absolute; left:0; width:44px; text-align:right; color:#6e7681; }
+  .k{color:#569cd6}.s{color:#ce9178}.f{color:#dcdcaa}.c{color:#6a9955}.t{color:#4ec9b0}.v{color:#9cdcfe}
+  .statusbar { background:var(--side); border-top:1px solid var(--border); display:flex; align-items:center; font-size:12px; padding:0 6px; gap:2px; }
+  .statusbar span { padding:0 7px; height:22px; display:flex; align-items:center; gap:4px; }
+  .statusbar .codicon { font-size:14px; } .statusbar .remote { background:var(--accent); color:#fff; margin-left:-6px; padding:0 10px; }
+  .statusbar .hov { background:#ffffff2a; }
+  .btn { background:var(--accent); color:#fff; border-radius:4px; padding:4px 12px; display:inline-block; font-size:13px; }
+  .btn.secondary { background:#313131; border:1px solid #ffffff1a; } .btn.hov { filter:brightness(1.25); }
+  code { font-family:Menlo,monospace; font-size:12px; background:#ffffff14; padding:0 3px; border-radius:3px; }
+
+  /* ---------- overlays (stage coordinates) ---------- */
+  .ov { position:absolute; opacity:0; pointer-events:none; transition:opacity .35s, transform .35s; }
+  .ov.show { opacity:1; }
+  #toast { right:44px; bottom:118px; width:440px; background:var(--widget); border:1px solid #454545; border-radius:6px; box-shadow:0 4px 16px #0009; padding:10px 12px; transform:translateY(14px); }
+  #toast.show { transform:none; }
+  #toast .msg { display:flex; gap:8px; line-height:1.45; } #toast .msg .codicon { color:#3794ff; margin-top:1px; }
+  #toast .src { color:var(--muted); font-size:12px; margin:8px 0 0 24px; display:flex; justify-content:space-between; align-items:center; }
+  #hover { width:290px; background:#202020; border:1px solid #454545; border-radius:4px; padding:8px 10px; box-shadow:0 2px 8px #0008; line-height:1.55; }
+  #hover p+p { margin-top:5px; }
+  #qp { top:56px; left:360px; width:560px; background:var(--widget); border:1px solid #454545; border-radius:8px; box-shadow:0 8px 24px #000a; padding:6px; transform:translateY(-10px); }
+  #qp.show { transform:none; }
+  #qp .input { height:28px; border:1px solid var(--accent); background:var(--input); border-radius:4px; display:flex; align-items:center; padding:0 8px; color:var(--muted); }
+  #qp .input b { color:#fff; font-weight:400; }
+  #qp .item { padding:4px 10px; border-radius:4px; margin-top:2px; }
+  #qp .item .l { display:flex; gap:6px; align-items:center; } #qp .item .d { color:var(--muted); font-size:12px; margin-left:4px; }
+  #qp .item .detail { color:var(--muted); font-size:12px; margin-left:22px; }
+  #qp .item.sel { background:var(--sel); outline:1px solid var(--accent); outline-offset:-1px; }
+  #dim { inset:20px 28px 84px; background:#000a; border-radius:12px; }
+  #modal { top:120px; left:390px; width:500px; background:#252526; border:1px solid #454545; border-radius:8px; box-shadow:0 12px 40px #000c;
+    padding:20px 20px 14px; display:grid; grid-template-columns:48px 1fr; gap:0 12px; transform:translateY(-10px); }
+  #modal.show { transform:none; }
+  #modal .icon { font-size:40px; color:#3794ff; } #modal h3 { font-size:14px; color:#fff; margin-bottom:8px; font-weight:600; }
+  #modal p { line-height:1.5; } #modal .buttons { grid-column:1/-1; display:flex; justify-content:flex-end; gap:8px; margin-top:16px; }
+  #ctx { width:230px; background:#252526; border:1px solid #454545; border-radius:6px; box-shadow:0 6px 20px #000b; padding:4px; }
+  #ctx .mi { padding:4px 12px; border-radius:4px; display:flex; gap:8px; align-items:center; } #ctx .mi.sel { background:var(--accent); color:#fff; }
+  #ctx hr { border:0; border-top:1px solid #454545; margin:4px 0; }
+  #term { left:372px; top:424px; width:880px; height:190px; background:var(--side); border-top:1px solid var(--border); transform:translateY(40px); }
+  #term.show { transform:none; }
+  #term .pt { display:flex; align-items:center; gap:18px; padding:0 16px; height:30px; font-size:11px; text-transform:uppercase; color:var(--muted); }
+  #term .pt .on { color:#fff; border-bottom:1px solid #fff; padding:6px 0; }
+  #termbody { padding:4px 16px; font:12.5px/18px Menlo,monospace; white-space:pre; } .p{color:#d78700}.h{color:#e5c07b}.d2{color:#808080}.ok{color:var(--green)}
+  .caret { display:inline-block; width:7px; height:14px; background:#ccc; vertical-align:-2px; animation:blink 1s steps(1) infinite; } @keyframes blink { 50% { opacity:0; } }
+  #settings { left:372px; top:50px; width:880px; height:564px; background:var(--bg); padding:20px 36px; overflow:hidden; }
+  #settings h2 { font-size:20px; font-weight:400; color:#fff; margin-bottom:4px; } #settings .sub { color:var(--muted); margin-bottom:16px; }
+  .set { padding:12px 0; border-top:1px solid var(--border); } .set b { color:#fff; font-weight:600; } .set .ds { color:var(--muted); margin:3px 0 8px; font-size:12.5px; }
+  .field { display:inline-flex; align-items:center; gap:8px; min-width:280px; background:var(--input); border:1px solid #3c3c3c; border-radius:3px; padding:4px 8px; font-size:13px; }
+  .field.hl { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); } .lock { color:var(--muted); font-size:11px; margin-left:8px; }
+  #card { inset:20px 28px 84px; background:#0c0c10ee; border-radius:12px; display:grid; place-items:center; text-align:center; backdrop-filter:blur(8px); }
+  #card .in { max-width:980px; padding:0 40px; } #card h1 { font-size:46px; font-weight:700; color:#fff; letter-spacing:-.02em; line-height:1.1; }
+  #card h2 { font-size:30px; color:#fff; font-weight:650; margin-bottom:10px; } #card .lead { font-size:18px; color:#c9c9c9; margin-top:14px; line-height:1.5; }
+  #card .flow { display:flex; align-items:center; justify-content:center; gap:14px; margin-top:34px; }
+  .node { background:#1c1c20; border:1px solid #3a3a40; border-radius:10px; padding:14px 16px; width:210px; font-size:14px; transition:.35s; }
+  .node small { display:block; color:var(--muted); margin-top:5px; font-size:12px; } .node .codicon { font-size:26px; display:block; margin-bottom:8px; color:#8a8a92; }
+  .node.lit { border-color:var(--clay); box-shadow:0 0 0 1px var(--clay),0 0 26px #d9775755; transform:translateY(-4px); } .node.lit .codicon { color:var(--clay); }
+  .arrow { color:#6d6d75; font-size:22px; }
+  .pills { display:flex; gap:12px; justify-content:center; margin-top:26px; }
+  .pill { border:1px solid #3a3a40; background:#1c1c20; border-radius:999px; padding:9px 18px; font-size:15px; color:#ddd; opacity:.35; transition:.35s; }
+  .pill.lit { opacity:1; border-color:var(--green); color:#fff; }
+  .warnbox { border:1px solid var(--red); background:#3a1f1a; border-radius:10px; padding:16px 20px; text-align:left; font-size:16px; line-height:1.55; margin-top:26px; }
+  .logout { font:26px Menlo,monospace; color:#fff; margin-top:22px; } .logout s { text-decoration-color:var(--red); text-decoration-thickness:3px; }
+  .install { display:inline-block; margin-top:28px; background:#0a0a0c; border:1px solid #3a3a40; border-radius:10px; padding:14px 22px; font:17px Menlo,monospace; color:#fff; }
+  .logo { width:72px; height:72px; border-radius:18px; margin:0 auto 22px; background:linear-gradient(135deg,#d97757,#8c4a7a 60%,#2c3e7a); display:grid; place-items:center; }
+  .logo svg { width:44px; height:44px; color:#fff; }
+  #reload { inset:20px 28px 84px; background:#1f1f1f; border-radius:12px; display:grid; place-items:center; color:var(--muted); font-size:15px; }
+
+  /* ---------- cursor ---------- */
+  #cursor { position:absolute; left:0; top:0; width:26px; height:26px; z-index:50; pointer-events:none; opacity:0; transition:transform .8s cubic-bezier(.45,0,.2,1), opacity .3s; }
+  #cursor svg { width:26px; height:26px; filter:drop-shadow(0 2px 3px #0009); }
+  #cursor::after { content:""; position:absolute; left:-12px; top:-12px; width:24px; height:24px; border-radius:50%; border:2px solid #fff; opacity:0; }
+  #cursor.click::after { animation:rip .45s ease-out; } @keyframes rip { from { opacity:.9; transform:scale(.3); } to { opacity:0; transform:scale(1.7); } }
+
+  /* ---------- captions ---------- */
+  #caption { position:absolute; left:28px; right:28px; bottom:0; height:84px; display:flex; align-items:center; gap:18px; transition:opacity .3s; }
+  #caption.off { opacity:0; }
+  #capnum { font:700 34px/1 Menlo,monospace; color:#ffffffaa; width:58px; text-align:right; }
+  #captext { flex:1; min-width:0; } #captitle { font-size:25px; font-weight:700; color:#fff; letter-spacing:-.01em; text-shadow:0 1px 8px #0006; }
+  #capdesc { font-size:15px; color:#ffffffdd; margin-top:3px; text-shadow:0 1px 8px #0006; }
+  #capcmd { font:12.5px Menlo,monospace; background:#0007; color:#fff; padding:6px 12px; border-radius:8px; border:1px solid #ffffff33; white-space:nowrap; }
+  #caption.sw #captext, #caption.sw #capnum, #caption.sw #capcmd { animation:cap .5s ease; } @keyframes cap { from { opacity:0; transform:translateY(8px); } }
+  #bar { position:absolute; left:0; bottom:0; height:4px; background:#fff; width:0; opacity:.85; transition:width .6s; }
+  #hint { position:absolute; right:16px; top:4px; font-size:11px; color:#fff; background:#0006; padding:3px 9px; border-radius:6px; transition:opacity 1s; z-index:60; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="shell">
+    <div class="titlebar">
+      <div class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div>
+      <div class="cc"><i class="codicon codicon-search" style="font-size:13px"></i> my-project</div>
+    </div>
+    <div class="main">
+      <div class="activity">
+        <div class="a"><i class="codicon codicon-files"></i></div>
+        <div class="a"><i class="codicon codicon-search"></i></div>
+        <div class="a"><i class="codicon codicon-source-control"></i></div>
+        <div class="a"><i class="codicon codicon-debug-alt"></i></div>
+        <div class="a"><i class="codicon codicon-extensions"></i></div>
+        <div class="a on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c0-3.1 2.5-5.5 5.5-5.5s5.5 2.4 5.5 5.5"/><path d="M15.5 6.5h5m0 0-2-2m2 2-2 2"/><path d="M20.5 12.5h-5m0 0 2-2m-2 2 2 2"/></svg></div>
+      </div>
+      <div class="sidebar">
+        <div class="side-title">Claude Accounts</div>
+        <div class="section"><i class="codicon codicon-chevron-down"></i> Accounts
+          <div class="actions"><i id="act-add" class="codicon codicon-add"></i><i id="act-save" class="codicon codicon-save"></i><i id="act-refresh" class="codicon codicon-refresh"></i><i id="act-more" class="codicon codicon-ellipsis"></i></div>
+        </div>
+        <div id="rows"></div>
+      </div>
+      <div class="editor">
+        <div class="tabs"><div class="tab on"><span style="color:#3178c6;font-weight:700;font-size:11px">TS</span> orders.ts</div><div class="tab"><i class="codicon codicon-markdown" style="font-size:14px"></i> README.md</div></div>
+        <div class="code">
+          <div data-n="1"><span class="k">import</span> * <span class="k">as</span> <span class="v">vscode</span> <span class="k">from</span> <span class="s">'vscode'</span>;</div>
+          <div data-n="2"> </div>
+          <div data-n="3"><span class="c">// Ask Claude to refactor this…</span></div>
+          <div data-n="4"><span class="k">export</span> <span class="k">async function</span> <span class="f">fetchOrders</span>(<span class="v">customerId</span>: <span class="t">string</span>) {</div>
+          <div data-n="5">  <span class="k">const</span> <span class="v">res</span> = <span class="k">await</span> <span class="f">fetch</span>(<span class="s">`/api/orders?customer=</span>${<span class="v">customerId</span>}<span class="s">`</span>);</div>
+          <div data-n="6">  <span class="k">if</span> (!<span class="v">res</span>.<span class="v">ok</span>) {</div>
+          <div data-n="7">    <span class="k">throw new</span> <span class="t">Error</span>(<span class="s">`Request failed: </span>${<span class="v">res</span>.<span class="v">status</span>}<span class="s">`</span>);</div>
+          <div data-n="8">  }</div>
+          <div data-n="9">  <span class="k">return</span> <span class="v">res</span>.<span class="f">json</span>();</div>
+          <div data-n="10">}</div>
+        </div>
+      </div>
+    </div>
+    <div class="statusbar">
+      <span class="remote"><i class="codicon codicon-remote"></i></span>
+      <span><i class="codicon codicon-source-control"></i> main</span>
+      <span><i class="codicon codicon-error"></i> 0 <i class="codicon codicon-warning"></i> 0</span>
+      <span style="margin-left:auto">Ln 12, Col 3</span><span>UTF-8</span><span>TypeScript</span>
+      <span id="sb-acct"><i class="codicon codicon-account"></i> <b id="sb-text" style="font-weight:400">Not signed in</b></span>
+      <span><i class="codicon codicon-bell"></i></span>
+    </div>
+  </div>
+
+  <div id="settings" class="ov">
+    <h2>Settings</h2><div class="sub">Extensions › Claude Code Profile Manager Pro</div>
+    <div class="set"><b>Claude Sessions: Reload After Switch</b><div class="ds">What to do after switching accounts. The Claude Code extension reads credentials at startup, so a reload is usually needed.</div><span class="field" id="f-reload"><span id="f-reload-v">ask</span><i class="codicon codicon-chevron-down" style="margin-left:auto"></i></span></div>
+    <div class="set"><b>Claude Sessions: Auto Sync Interval Minutes</b><div class="ds">How often to copy refreshed tokens of the active account into its saved session. 0 disables periodic sync.</div><span class="field" id="f-sync">5</span></div>
+    <div class="set"><b>Claude Sessions: Config Dir</b><span class="lock"><i class="codicon codicon-lock" style="font-size:12px"></i> user settings only</span><div class="ds">Override the Claude config directory. Leave empty to use CLAUDE_CONFIG_DIR or your home directory.</div><span class="field">&nbsp;</span></div>
+    <div class="set"><b>Claude Sessions: Keychain Service</b><span class="lock"><i class="codicon codicon-lock" style="font-size:12px"></i> user settings only</span><div class="ds">macOS only: Keychain service name Claude Code stores its credentials under.</div><span class="field">Claude Code-credentials</span></div>
+    <div class="set"><b>Claude Sessions: Login Command</b><span class="lock"><i class="codicon codicon-lock" style="font-size:12px"></i> user settings only</span><div class="ds">Terminal command used to sign in to a new account when adding one.</div><span class="field">claude</span></div>
+  </div>
+  <div id="term" class="ov"><div class="pt"><span>Problems</span><span>Output</span><span class="on">Terminal</span><span style="margin-left:auto;text-transform:none">Claude Login</span></div><div id="termbody"></div></div>
+  <div id="hover" class="ov"></div>
+  <div id="toast" class="ov"></div>
+  <div id="qp" class="ov"></div>
+  <div id="ctx" class="ov"></div>
+  <div id="dim" class="ov"></div>
+  <div id="modal" class="ov"></div>
+  <div id="card" class="ov"></div>
+  <div id="reload" class="ov"><div><i class="codicon codicon-loading codicon-modifier-spin"></i>&nbsp; Reloading window…</div></div>
+
+  <div id="caption"><div id="capnum"></div><div id="captext"><div id="captitle"></div><div id="capdesc"></div></div><div id="capcmd"></div></div>
+  <div id="bar"></div>
+  <div id="cursor"><svg viewBox="0 0 24 24"><path d="M3 2l17 9-7.5 2L9 21z" fill="#fff" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+  <div id="hint">Space pause · R restart · ←/→ chapter · C captions · H hide this</div>
+</div>
+
+<script>
+/* ================= engine ================= */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const stage = $('#stage');
+const q = new URLSearchParams(location.search);
+const SPEED = parseFloat(q.get('speed')) || 1;
+let paused = false, gen = 0;
+
+function fit() { stage.style.transform = `translate(-50%,-50%) scale(${Math.min(innerWidth / 1280, innerHeight / 720)})`; }
+addEventListener('resize', fit); fit();
+
+class Cancel extends Error {}
+async function sleep(ms) {
+  const g = gen; let t = 0;
+  while (t < ms) {
+    await new Promise(r => setTimeout(r, 40));
+    if (g !== gen) throw new Cancel();
+    if (!paused) t += 40 * SPEED;
+  }
+  if (g !== gen) throw new Cancel();
+}
+
+/* ---- cursor ---- */
+const cur = $('#cursor');
+function stagePos(el, fx = .5, fy = .5) {
+  const sr = stage.getBoundingClientRect(), k = sr.width / 1280, r = el.getBoundingClientRect();
+  return [(r.left - sr.left + r.width * fx) / k, (r.top - sr.top + r.height * fy) / k];
+}
+async function moveTo(el, o = {}) {
+  const [x, y] = stagePos(el, o.fx ?? .5, o.fy ?? .5);
+  $$('.hov').forEach(e => e.classList.remove('hov'));
+  const row = el.closest('.row'); if (row) row.classList.add('hov'); else if (!o.nohov) el.classList.add('hov');
+  cur.style.transitionDuration = (o.fast ? .45 : .8) / SPEED + 's';
+  cur.style.opacity = 1; cur.style.transform = `translate(${x}px,${y}px)`;
+  await sleep(o.fast ? 520 : 900);
+}
+async function click(fast) { cur.classList.remove('click'); void cur.offsetWidth; cur.classList.add('click'); await sleep(fast ? 250 : 380); }
+async function clickOn(el, o) { await moveTo(el, o); await click(o && o.fast); }
+const hideCursor = () => { cur.style.opacity = 0; $$('.hov').forEach(e => e.classList.remove('hov')); };
+
+/* ---- overlays ---- */
+const show = (el, x, y) => { const e = typeof el === 'string' ? $(el) : el; if (x != null) { e.style.left = x + 'px'; e.style.top = y + 'px'; } e.classList.add('show'); e.style.pointerEvents = 'auto'; };
+const hide = el => { const e = typeof el === 'string' ? $(el) : el; e.classList.remove('show'); };
+const hideAll = () => ['#settings', '#term', '#hover', '#toast', '#qp', '#ctx', '#dim', '#modal', '#card', '#reload'].forEach(hide);
+
+function toast(html, btn) {
+  $('#toast').innerHTML = `<div class="msg"><i class="codicon codicon-info"></i><div>${html}</div></div><div class="src"><span>Source: Claude Code Profile Manager Pro</span>${btn ? `<span class="btn" id="toast-btn">${btn}</span>` : ''}</div>`;
+  show('#toast');
+}
+function modal(title, body, ok, cancel = 'Cancel') {
+  $('#modal').innerHTML = `<i class="codicon codicon-info icon"></i><div><h3>${title}</h3><p>${body}</p></div><div class="buttons"><span class="btn secondary">${cancel}</span><span class="btn" id="m-ok">${ok}</span></div>`;
+  show('#dim'); show('#modal');
+}
+async function confirmModal(title, body, ok, read = 2600) {
+  modal(title, body, ok); await sleep(read);
+  await clickOn($('#m-ok')); hide('#modal'); hide('#dim'); cur.style.opacity = 1; await sleep(300);
+}
+function card(html) { $('#card').innerHTML = `<div class="in">${html}</div>`; show('#card'); }
+async function light(sel, gap = 750, from = 0) { for (const e of $$(sel).slice(from)) { e.classList.add('lit'); await sleep(gap); } }
+
+async function typeInto(el, text, ms = 55) {
+  for (const ch of text) { el.insertAdjacentText('beforeend', ch); await sleep(ms); }
+}
+function qp(placeholder, items, sel) {
+  $('#qp').innerHTML = `<div class="input">${placeholder}</div>` + items.map((it, i) => `<div class="item${i === sel ? ' sel' : ''}">${it}</div>`).join('');
+  show('#qp');
+}
+const qpSel = i => $$('#qp .item').forEach((e, n) => e.classList.toggle('sel', n === i));
+
+/* ================= state ================= */
+const ACC = {
+  alex:   { id: 'alex',   email: 'alex@example.com',   plan: 'team', org: 'Acme Corp', used: 'just now',   valid: '12/1/2026, 9:14 AM' },
+  sam:    { id: 'sam',    email: 'sam@example.com',    plan: 'max',  org: 'Acme Corp', used: '2 days ago', valid: '12/3/2026, 4:40 PM' },
+  jordan: { id: 'jordan', email: 'jordan@example.com', plan: 'pro',  org: 'Acme Corp', used: 'yesterday',  valid: '12/2/2026, 11:05 AM' },
+  taylor: { id: 'taylor', email: 'taylor@example.com', plan: 'pro',  org: 'Acme Corp', used: '3 days ago', valid: '12/5/2026, 8:30 AM' },
+};
+const S = { accounts: [], live: null };
+function P(list, live, extra) { S.accounts = list.map(k => ({ ...ACC[k] })); S.live = live ? ACC[live].email : null; if (extra) extra(); render(); }
+const acct = id => S.accounts.find(a => a.id === id);
+const rowOf = id => $(`.row[data-id="${id}"]`);
+const label = a => a.label || a.email;
+
+function render() {
+  const rows = $('#rows'), parts = [];
+  if (!S.accounts.length && !S.live) {
+    rows.innerHTML = `<div class="welcome">No saved Claude accounts yet.<span class="btn welcome-btn" id="w-save" style="display:block">Save Current Login</span><span class="btn" id="w-add" style="display:block">Add Another Account</span><p>Sessions are stored only on this machine, in your OS keychain via VS Code Secret Storage.</p></div>`;
+  } else {
+    if (S.live && !S.accounts.some(a => a.email === S.live))
+      parts.push(`<div class="row" data-id="unsaved"><i class="codicon codicon-circle-large-outline"></i><span>${S.live}</span><span class="desc">not saved</span><div class="inline"><i class="codicon codicon-save" id="in-save"></i></div></div>`);
+    for (const a of S.accounts) {
+      const active = a.email === S.live, exp = a.expired && !active;
+      const ic = active ? 'pass-filled green' : exp ? 'warning warn' : 'account';
+      const desc = active ? `${a.plan} · active` : exp ? `${a.plan} · expired` : (a.label ? `${a.plan} · ${a.email}` : a.plan);
+      parts.push(`<div class="row${a.fresh ? ' pop' : ''}" data-id="${a.id}"><i class="codicon codicon-${ic}"></i><span>${label(a)}</span><span class="desc">${desc}</span>${active ? '' : '<div class="inline"><i class="codicon codicon-log-in" title="Switch"></i></div>'}</div>`);
+      a.fresh = false;
+    }
+    rows.innerHTML = parts.join('');
+  }
+  $('#sb-text').textContent = S.live || 'Not signed in';
+}
+
+function hoverCard(id) {
+  const a = acct(id), row = rowOf(id); if (!a || !row) return;
+  $('#hover').innerHTML = `<p><b>${a.email}</b></p><p>Organization: ${a.org}</p><p>Plan: ${a.plan}</p><p>Last used: ${a.used}</p><p>${a.expired ? 'Session expired: sign in again' : 'Session valid until ' + a.valid}</p>`;
+  const [x, y] = stagePos(row, 0, 1); show('#hover', x + 120, y + 6);
+}
+
+/* ---- sign-in terminal (used by Add Account + re-sign-in) ---- */
+async function loginTerminal(email, fast) {
+  show('#term'); const tb = $('#termbody'); tb.innerHTML = '<span class="p">~/my-project</span> ❯ <span id="t1"></span><span class="caret"></span>';
+  await sleep(fast ? 300 : 700); await typeInto($('#t1'), 'claude', fast ? 20 : 70); await sleep(fast ? 200 : 500);
+  tb.innerHTML = `<span class="p">~/my-project</span> ❯ claude\n\n <span class="h">Welcome to Claude Code</span>\n\n Select login method:\n\n ❯ 1. Claude account with subscription\n   2. Anthropic Console account · API usage billing\n\n <span class="d2">Opening browser to sign in…</span>`;
+  await sleep(fast ? 700 : 2000);
+  tb.innerHTML += `\n <span class="ok">✔ Login successful</span> · ${email}`;
+  await sleep(fast ? 500 : 1300);
+}
+async function addAccountFlow(id, fast) {
+  await clickOn($('#act-add'), { fast });
+  modal('Add another Claude account?', 'Your current login has been saved. Claude Code will be signed out on this machine only (tokens are not revoked), and a terminal will open so you can sign in with another account.', 'Continue');
+  await sleep(fast ? 800 : 3000); await clickOn($('#m-ok'), { fast }); hide('#modal'); hide('#dim');
+  S.live = null; render();                      // signed out locally
+  await loginTerminal(ACC[id].email, fast);
+  S.live = ACC[id].email; S.accounts.push({ ...ACC[id], fresh: true }); render();
+  toast(`Saved <b>${ACC[id].email}</b>. It will appear in the Claude Accounts view.`);
+  await sleep(fast ? 900 : 1800); hide('#toast'); hide('#term'); await sleep(300);
+}
+
+/* ================= chapters ================= */
+const ALL4 = ['alex', 'sam', 'jordan', 'taylor'];
+const CH = [
+ { t: 'Claude Code Profile Manager Pro', d: 'Save several Claude Code accounts and switch between them in one click.', cmd: 'VS Code extension',
+   pre() { P([], null); },
+   async run() {
+     card(`<div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c0-3.1 2.5-5.5 5.5-5.5s5.5 2.4 5.5 5.5"/><path d="M15.5 6.5h5m0 0-2-2m2 2-2 2"/><path d="M20.5 12.5h-5m0 0 2-2m-2 2 2 2"/></svg></div><h1>Claude Code<br>Profile Manager Pro</h1><div class="lead">Save several Claude accounts. Switch in one click. No extra sign-ins.</div>`);
+     await sleep(4200); hide('#card'); await sleep(500); } },
+
+ { t: 'Start fresh', d: 'Open the Claude Accounts view in the Activity Bar. Nothing is saved yet.', cmd: 'view · Claude Accounts',
+   pre() { P([], null); },
+   async run() { await moveTo($('#w-save')); await sleep(900); await moveTo($('#w-add')); await sleep(1400); hideCursor(); } },
+
+ { t: 'Sign in as usual', d: 'Use Claude Code the normal way. Its active login shows in the status bar, marked ○ until saved.', cmd: 'Claude Code extension · claude CLI',
+   pre() { P([], null); },
+   async run() { S.live = ACC.alex.email; render(); await sleep(1200); await moveTo(rowOf('unsaved')); await sleep(1800); } },
+
+ { t: 'Save Current Login', d: 'One click stores this session locally, in your OS keychain via VS Code Secret Storage.', cmd: 'claudeSessions.saveCurrent',
+   pre() { P([], 'alex'); },
+   async run() {
+     await clickOn($('#in-save', rowOf('unsaved') || document) || $('#act-save'));
+     S.accounts.push({ ...ACC.alex, fresh: true }); render();
+     toast('Saved <b>alex@example.com</b> (team).'); await sleep(2200); hide('#toast'); } },
+
+ { t: 'Add Account…', d: 'Saves your session, signs out locally, opens a terminal, and saves the next account as soon as sign-in finishes.', cmd: 'claudeSessions.addAccount',
+   pre() { P(['alex'], 'alex'); },
+   async run() {
+     await addAccountFlow('sam', false);
+     await addAccountFlow('jordan', true);
+     await addAccountFlow('taylor', true);
+     hideCursor(); await sleep(900); } },
+
+ { t: 'Hover for details', d: 'Organization, plan, when you last used it, and how long the saved session stays valid.', cmd: 'tree item tooltip',
+   pre() { P(ALL4, 'taylor'); },
+   async run() {
+     await moveTo(rowOf('sam')); hoverCard('sam'); await sleep(2800); hide('#hover');
+     await moveTo(rowOf('alex')); hoverCard('alex'); await sleep(2200); hide('#hover'); hideCursor(); } },
+
+ { t: 'One-click switch', d: 'Click → beside any saved account. No new sign-in. Then reload so the extension picks it up.', cmd: 'claudeSessions.switchTo',
+   pre() { P(ALL4, 'taylor'); },
+   async run() {
+     await moveTo(rowOf('alex')); await clickOn($('.inline .codicon', rowOf('alex')), { fast: true });
+     S.live = ACC.alex.email; render(); rowOf('alex').classList.add('sel');
+     toast('Switched Claude Code to <b>alex@example.com</b>. Restart any running <code>claude</code> terminal sessions. Reload the window so the Claude Code extension uses the new account?', 'Reload Window');
+     await sleep(2600); await clickOn($('#toast-btn')); hide('#toast'); show('#reload'); await sleep(1500); hide('#reload'); await sleep(600); hideCursor(); } },
+
+ { t: 'Switch from the status bar', d: 'Click the account name in the status bar. The active account is marked, an expired one is flagged.', cmd: 'claudeSessions.switch',
+   pre() { P(ALL4, 'alex'); },
+   async run() {
+     await clickOn($('#sb-acct'));
+     qp('Select a Claude account to switch to', [
+       '<div class="l"><i class="codicon codicon-pass-filled green"></i> alex@example.com <span class="d">team</span></div><div class="detail">Active</div>',
+       '<div class="l"><i class="codicon codicon-account"></i> sam@example.com <span class="d">max</span></div>',
+       '<div class="l"><i class="codicon codicon-account"></i> jordan@example.com <span class="d">pro</span></div>',
+       '<div class="l"><i class="codicon codicon-account"></i> taylor@example.com <span class="d">pro</span></div>'], -1);
+     await sleep(900); const it = $$('#qp .item');
+     await moveTo(it[2], { nohov: true }); qpSel(2); await sleep(1200); await click();
+     hide('#qp'); S.live = ACC.jordan.email; render();
+     toast('Switched Claude Code to <b>jordan@example.com</b>. Reload the window so the Claude Code extension uses the new account?', 'Reload Window');
+     await sleep(1800); hide('#toast'); hideCursor(); } },
+
+ { t: 'Command Palette', d: 'Every action is also a command. Search "Claude Accounts" to see them all.', cmd: '⇧⌘P · Claude Accounts: …',
+   pre() { P(ALL4, 'jordan'); },
+   async run() {
+     qp('<b>&gt; </b><span id="pal"></span>', [], -1); await sleep(500); await typeInto($('#pal'), 'Claude Accounts', 60);
+     const cmds = [['save', 'Save Current Login'], ['add', 'Add Account…'], ['arrow-swap', 'Switch Account…'], ['clear-all', 'Remove All Saved Sessions…'], ['refresh', 'Refresh']];
+     $('#qp').insertAdjacentHTML('beforeend', cmds.map((c, i) => `<div class="item${i === 0 ? ' sel' : ''}"><div class="l"><i class="codicon codicon-${c[0]}"></i> Claude Accounts: ${c[1]}</div></div>`).join(''));
+     await sleep(1800); const it = $$('#qp .item');
+     for (const i of [1, 2, 3, 4]) { qpSel(i); await sleep(700); }
+     await moveTo(it[4], { nohov: true }); await click(); hide('#qp');
+     $('#act-refresh').classList.add('spin'); await sleep(1600); $('#act-refresh').classList.remove('spin'); hideCursor(); } },
+
+ { t: 'Token refresh sync', d: 'When Claude Code refreshes the active account\'s tokens, the saved copy is updated too, so it never goes stale.', cmd: 'claudeSessions.autoSyncIntervalMinutes',
+   pre() { P(ALL4, 'jordan'); },
+   async run() {
+     card(`<h2>Always-valid saved sessions</h2><div class="lead">Synced every 5 minutes, and again before every switch.</div>
+       <div class="flow">
+        <div class="node n"><i class="codicon codicon-sync"></i>Claude Code<small>refreshes its tokens</small></div><span class="arrow">→</span>
+        <div class="node n"><i class="codicon codicon-key"></i>Active login<small>Keychain · .credentials.json</small></div><span class="arrow">→</span>
+        <div class="node n"><i class="codicon codicon-account"></i>Profile Manager<small>copies the newest tokens</small></div><span class="arrow">→</span>
+        <div class="node n"><i class="codicon codicon-lock"></i>Secret Storage<small>saved session updated</small></div>
+       </div>`);
+     await sleep(900); await light('.node', 900); await sleep(2200); hide('#card'); await sleep(500); } },
+
+ { t: 'Expired? Sign in again', d: 'An expired session shows ⚠. Sign in again, click Save Current Login, and the entry updates in place.', cmd: 'claudeSessions.saveCurrent',
+   pre() { P(ALL4, 'jordan', () => { acct('taylor').expired = true; render(); }); },
+   async run() {
+     acct('taylor').expired = true; render(); await sleep(800);
+     await moveTo(rowOf('taylor')); hoverCard('taylor'); await sleep(2400); hide('#hover');
+     await loginTerminal(ACC.taylor.email, false);
+     S.live = ACC.taylor.email; acct('taylor').expired = false; render(); hide('#term');
+     await clickOn($('#act-save')); toast('Updated the saved session for <b>taylor@example.com</b>.');
+     rowOf('taylor').classList.add('sel'); await sleep(2200); hide('#toast'); hideCursor(); } },
+
+ { t: 'Rename', d: 'Give an account a friendly name. The email stays visible beside it.', cmd: 'claudeSessions.rename',
+   pre() { P(ALL4, 'taylor'); },
+   async run() {
+     const row = rowOf('sam'); await moveTo(row);
+     const [x, y] = stagePos(row, .55, .9);
+     $('#ctx').innerHTML = '<div class="mi sel" id="mi-sw">Switch to This Account</div><div class="mi" id="mi-rn">Rename…</div><hr><div class="mi" id="mi-rm">Remove Saved Session</div>';
+     await click(); show('#ctx', x, y); await sleep(900);
+     await moveTo($('#mi-rn'), { nohov: true }); $$('#ctx .mi').forEach(m => m.classList.toggle('sel', m.id === 'mi-rn')); await click(); hide('#ctx');
+     qp('<b id="ren"></b><span class="caret"></span>', [], -1); await sleep(400);
+     await typeInto($('#ren'), 'Sam (Client)', 70); await sleep(700); await click(true); hide('#qp');
+     acct('sam').label = 'Sam (Client)'; render(); rowOf('sam').classList.add('pop'); await sleep(1800); hideCursor(); } },
+
+ { t: 'Remove Saved Session', d: 'Forget one account. Claude Code itself stays signed in to whichever account is active.', cmd: 'claudeSessions.remove',
+   pre() { P(ALL4, 'taylor', () => { acct('sam').label = 'Sam (Client)'; render(); }); },
+   async run() {
+     const row = rowOf('jordan'); await moveTo(row); const [x, y] = stagePos(row, .55, .9);
+     $('#ctx').innerHTML = '<div class="mi sel">Switch to This Account</div><div class="mi">Rename…</div><hr><div class="mi" id="mi-rm">Remove Saved Session</div>';
+     await click(); show('#ctx', x, y); await sleep(900);
+     await moveTo($('#mi-rm'), { nohov: true }); $$('#ctx .mi').forEach(m => m.classList.toggle('sel', m.id === 'mi-rm')); await click(); hide('#ctx');
+     await confirmModal('Remove saved session for jordan@example.com?', 'The saved copy on this machine is deleted. Claude Code stays signed in to its current account.', 'Remove', 2400);
+     rowOf('jordan').classList.add('gone'); await sleep(700); S.accounts = S.accounts.filter(a => a.id !== 'jordan'); render(); await sleep(1400); hideCursor(); } },
+
+ { t: 'Don\'t use /logout', d: '/logout revokes the session on Anthropic\'s servers, so the saved copy stops working. Use Add Account instead.', cmd: 'important',
+   pre() { P(['alex', 'sam', 'taylor'], 'taylor'); },
+   async run() {
+     card(`<h2>One rule to remember</h2><div class="logout"><s>/logout</s> &nbsp;→&nbsp; Add Account…</div>
+       <div class="warnbox"><b>/logout</b> revokes the session on the server. The saved copy stops working.<br><b>Add Account…</b> signs out on this machine only. Tokens are not revoked.</div>`);
+     await sleep(5200); hide('#card'); await sleep(500); } },
+
+ { t: 'Settings', d: 'Choose when to reload and how often to sync. Machine-level settings never come from a workspace.', cmd: 'claudeSessions.*',
+   pre() { P(['alex', 'sam', 'taylor'], 'taylor'); },
+   async run() {
+     show('#settings'); await sleep(1200);
+     await moveTo($('#f-reload')); $('#f-reload').classList.add('hl'); await click(); await sleep(500);
+     $('#f-reload-v').textContent = 'always'; await sleep(1200);
+     await moveTo($('#f-sync')); $('#f-sync').classList.add('hl'); await sleep(2800); hideCursor(); hide('#settings'); await sleep(500); } },
+
+ { t: 'Local only. Works everywhere.', d: 'Tokens stay in your OS keychain, with no network requests. Works with the Claude Code extension and the CLI.', cmd: 'privacy',
+   pre() { P(['alex', 'sam', 'taylor'], 'taylor'); },
+   async run() {
+     card(`<h2>One login, every Claude Code client</h2>
+       <div class="flow">
+        <div class="node n"><i class="codicon codicon-extensions"></i>Claude Code<small>VS Code extension</small></div>
+        <div class="node n"><i class="codicon codicon-terminal"></i>claude<small>CLI in any terminal</small></div>
+       </div>
+       <div class="pills"><span class="pill p">OS keychain via Secret Storage</span><span class="pill p">No network requests</span><span class="pill p">Tokens never logged</span></div>`);
+     await sleep(700); await light('.node', 700); await light('.pill', 900); await sleep(1800); hide('#card'); await sleep(500); } },
+
+ { t: 'Remove All Saved Sessions…', d: 'Clean up before uninstalling. VS Code can\'t delete an extension\'s saved data on uninstall.', cmd: 'claudeSessions.removeAll',
+   pre() { P(['alex', 'sam', 'taylor'], 'taylor'); },
+   async run() {
+     await clickOn($('#act-more'));
+     const [x, y] = stagePos($('#act-more'), .5, 1); $('#ctx').innerHTML = '<div class="mi sel" id="mi-all"><i class="codicon codicon-clear-all"></i> Remove All Saved Sessions…</div>';
+     show('#ctx', x - 200, y + 4); await sleep(900); await moveTo($('#mi-all'), { nohov: true }); await click(); hide('#ctx');
+     await confirmModal('Remove all saved Claude sessions?', 'Every saved account is deleted from this machine. Claude Code stays signed in to its current account.', 'Remove All', 2600);
+     S.accounts = []; render(); await sleep(2200); hideCursor(); } },
+
+ { t: 'Get it now', d: 'Search "Claude Code Profile Manager Pro" in the Extensions view.', cmd: 'MIT · open source',
+   pre() { P([], null); },
+   async run() {
+     card(`<div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c0-3.1 2.5-5.5 5.5-5.5s5.5 2.4 5.5 5.5"/><path d="M15.5 6.5h5m0 0-2-2m2 2-2 2"/><path d="M20.5 12.5h-5m0 0 2-2m-2 2 2 2"/></svg></div>
+       <h1>Switch Claude accounts<br>in one click</h1><div class="lead">Local only · Free · MIT licensed</div>
+       <div class="install">code --install-extension RaihanSharifRimon.claude-code-profile-manager-pro</div>
+       <div class="lead" style="font-size:13px;opacity:.6;margin-top:22px">Unofficial community project. Not affiliated with or endorsed by Anthropic.</div>`);
+     await sleep(6000); } },
+];
+
+/* ================= runner ================= */
+let idx = 0;
+function setCaption(i) {
+  const c = $('#caption'); c.classList.remove('sw'); void c.offsetWidth; c.classList.add('sw');
+  $('#capnum').textContent = String(i + 1).padStart(2, '0'); $('#captitle').textContent = CH[i].t; $('#capdesc').textContent = CH[i].d; $('#capcmd').textContent = CH[i].cmd;
+  $('#bar').style.width = ((i + 1) / CH.length * 100) + '%';
+}
+async function play(start, fresh) {
+  const g = ++gen; idx = start;
+  try {
+    await new Promise(r => setTimeout(r, 120));
+    hideAll(); hideCursor();
+    for (let i = start; i < CH.length; i++) {
+      idx = i; hideAll(); if (i === start && fresh) CH[i].pre(); setCaption(i);
+      $$('.row.sel').forEach(e => e.classList.remove('sel'));
+      await sleep(600); await CH[i].run();
+      if (i < CH.length - 1) { hideAll(); hideCursor(); const nx = CH[i + 1]; /* state carries over; presets only apply on jumps */ await sleep(500); }
+    }
+  } catch (e) { if (!(e instanceof Cancel)) throw e; }
+}
+const goto = i => { i = Math.max(0, Math.min(CH.length - 1, i)); play(i, true); };
+
+addEventListener('keydown', e => {
+  if (e.key === ' ') { paused = !paused; e.preventDefault(); }
+  else if (e.key.toLowerCase() === 'r') goto(0);
+  else if (e.key === 'ArrowRight') goto(idx + 1);
+  else if (e.key === 'ArrowLeft') goto(idx - 1);
+  else if (e.key.toLowerCase() === 'c') $('#caption').classList.toggle('off');
+  else if (e.key.toLowerCase() === 'h') $('#hint').style.display = 'none';
+});
+setTimeout(() => $('#hint').style.opacity = 0, 5000);
+const m = location.hash.match(/c=(\d+)/); goto(m ? parseInt(m[1], 10) - 1 : 0);
+</script>
+</body>
+</html>
