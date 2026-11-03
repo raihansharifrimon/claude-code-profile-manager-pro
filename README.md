@@ -1,4 +1,4 @@
-# Claude Account Manager
+# Claude Profile Manager
 
 Save several Claude Code accounts on your machine and switch between them in one click, without signing in again.
 

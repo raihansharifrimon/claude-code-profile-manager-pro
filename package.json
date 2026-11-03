@@ -1,6 +1,6 @@
 {
-  "name": "claude-account-manager",
-  "displayName": "Claude Account Manager",
+  "name": "claude-profile-manager",
+  "displayName": "Claude Profile Manager",
   "description": "Save multiple Claude Code login sessions on your machine and switch between accounts instantly, without signing in again. Community project, not affiliated with Anthropic.",
   "version": "0.1.0",
   "publisher": "raihansharifrimon",
@@ -9,10 +9,10 @@
   "icon": "media/icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/raihansharifrimon/claude-account-manager"
+    "url": "https://github.com/raihansharifrimon/claude-profile-manager"
   },
   "bugs": {
-    "url": "https://github.com/raihansharifrimon/claude-account-manager/issues"
+    "url": "https://github.com/raihansharifrimon/claude-profile-manager/issues"
   },
   "engines": {
     "vscode": "^1.90.0"
@@ -179,7 +179,7 @@
       ]
     },
     "configuration": {
-      "title": "Claude Account Manager",
+      "title": "Claude Profile Manager",
       "properties": {
         "claudeSessions.reloadAfterSwitch": {
           "type": "string",
