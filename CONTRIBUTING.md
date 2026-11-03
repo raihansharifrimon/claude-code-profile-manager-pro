@@ -35,7 +35,7 @@ they stay testable with plain Node.
 
 1. Update `CHANGELOG.md`, then run `npm version patch` (or `minor` / `major`). This bumps `package.json` and creates a `vX.Y.Z` tag.
 2. `git push --follow-tags`.
-3. The Release workflow tests and packages the extension, creates a GitHub release with the `.vsix` attached, and publishes it to the Marketplace if the `VSCE_PAT` secret is set.
+3. The Release workflow tests and packages the extension, publishes it to the Marketplace with trusted publishing (no stored token), and creates a GitHub release with the `.vsix` attached. Publishing only runs from the `marketplace` environment, which only accepts `v*` tags.
 
 ## Pull requests
 
