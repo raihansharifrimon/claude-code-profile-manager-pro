@@ -89,16 +89,19 @@ export class AccountsTreeProvider implements vscode.TreeDataProvider<AccountNode
     }
 
     const tooltip = new vscode.MarkdownString(undefined, true);
-    tooltip.appendMarkdown(`**${meta.email}**\n\n`);
+    // Values come from .claude.json, so append them as escaped text, not Markdown.
+    tooltip.appendMarkdown('**').appendText(meta.email).appendMarkdown('**\n\n');
     if (meta.organizationName) {
-      tooltip.appendMarkdown(`Organization: ${meta.organizationName}\n\n`);
+      tooltip.appendMarkdown('Organization: ').appendText(meta.organizationName).appendMarkdown('\n\n');
     }
     if (meta.subscriptionType) {
-      tooltip.appendMarkdown(`Plan: ${meta.subscriptionType}\n\n`);
+      tooltip.appendMarkdown('Plan: ').appendText(meta.subscriptionType).appendMarkdown('\n\n');
     }
     tooltip.appendMarkdown(`Last used: ${formatRelative(meta.lastUsedAt)}\n\n`);
     tooltip.appendMarkdown(`Session saved: ${formatRelative(meta.savedAt)}\n\n`);
-    if (meta.refreshTokenExpiresAt) {
+    if (meta.invalid) {
+      tooltip.appendMarkdown('$(warning) This saved session needs a fresh sign-in. Sign in to this account again and save it.');
+    } else if (meta.refreshTokenExpiresAt) {
       tooltip.appendMarkdown(
         expired
           ? `$(warning) Session expired ${formatRelative(meta.refreshTokenExpiresAt)}. Sign in again and save it.`

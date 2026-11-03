@@ -68,6 +68,10 @@ A saved session lasts as long as its refresh token does. You'll need to sign in 
 
 In each case, sign in again and click **Save Current Login**. The saved entry is updated in place.
 
+## Removing saved sessions
+
+Right-click an account and choose **Remove Saved Session**, or run **Claude Accounts: Remove All Saved Sessions…** from the Command Palette or the view's `…` menu. Do this before uninstalling: VS Code doesn't let extensions delete their saved data on uninstall. Claude Code stays signed in to its current account either way.
+
 ## Settings
 
 | Setting | Default | Description |
@@ -77,6 +81,8 @@ In each case, sign in again and click **Save Current Login**. The saved entry is
 | `claudeSessions.configDir` | `""` | Override the Claude config directory |
 | `claudeSessions.keychainService` | `Claude Code-credentials` | macOS Keychain service name |
 | `claudeSessions.loginCommand` | `claude` | Command run in the terminal when adding an account |
+
+For security, `configDir`, `keychainService` and `loginCommand` can only be set in your user settings, never in a workspace's `.vscode/settings.json`. The extension only runs in trusted workspaces.
 
 ## Development
 

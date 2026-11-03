@@ -16,6 +16,11 @@ const SECURITY = '/usr/bin/security';
 const ERR_SEC_ITEM_NOT_FOUND = 44;
 
 function quoteForSecurityShell(value: string): string {
+  // `security -i` reads one command per line, so a newline would start a new command.
+  // eslint-disable-next-line no-control-regex
+  if (/[\x00-\x1f\x7f]/.test(value)) {
+    throw new Error('Keychain service and account names must not contain control characters.');
+  }
   return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
 
@@ -55,7 +60,7 @@ export class KeychainBackend implements CredentialBackend {
    * The secret is passed hex-encoded over stdin (`security -i`) rather than
    * argv, so it never shows up in the process list.
    */
-  write(raw: string): Promise<void> {
+  async write(raw: string): Promise<void> {
     const command =
       [
         'add-generic-password',
@@ -67,7 +72,7 @@ export class KeychainBackend implements CredentialBackend {
         '-X',
         Buffer.from(raw, 'utf8').toString('hex'),
       ].join(' ') + '\n';
-    return new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       const child = spawn(SECURITY, ['-i'], { stdio: ['pipe', 'ignore', 'pipe'] });
       let stderr = '';
       child.stderr.on('data', (chunk) => (stderr += chunk));

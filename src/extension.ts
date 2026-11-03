@@ -10,6 +10,8 @@ import type { ProfileMeta } from './types';
 const SECTION = 'claudeSessions';
 const LOGIN_POLL_MS = 2_000;
 const LOGIN_TIMEOUT_MS = 15 * 60_000;
+/** Claude Code writes its config often; wait for a burst of writes to finish. */
+const BACKGROUND_SETTLE_MS = 1_500;
 
 function config() {
   return vscode.workspace.getConfiguration(SECTION);
@@ -60,12 +62,19 @@ export function activate(context: vscode.ExtensionContext): void {
 
   const sync = async () => {
     try {
-      await manager.syncActive();
+      await manager.syncActive(BACKGROUND_SETTLE_MS);
     } catch {
       // Background sync is opportunistic; errors surface on explicit actions.
     }
     refreshAll();
   };
+
+  let debounceTimer: NodeJS.Timeout | undefined;
+  const debouncedSync = () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(sync, 500);
+  };
+  context.subscriptions.push({ dispose: () => clearTimeout(debounceTimer) });
 
   // React when Claude Code itself changes the login (sign-in, token refresh).
   const watchConfigFiles = () => {
@@ -74,8 +83,8 @@ export function activate(context: vscode.ExtensionContext): void {
       const watcher = vscode.workspace.createFileSystemWatcher(
         new vscode.RelativePattern(vscode.Uri.file(path.dirname(file)), path.basename(file)),
       );
-      watcher.onDidChange(sync);
-      watcher.onDidCreate(sync);
+      watcher.onDidChange(debouncedSync);
+      watcher.onDidCreate(debouncedSync);
       watcher.onDidDelete(refreshAll);
       return watcher;
     });
@@ -177,7 +186,10 @@ export function activate(context: vscode.ExtensionContext): void {
   const register = (command: string, handler: (...args: never[]) => unknown) =>
     context.subscriptions.push(vscode.commands.registerCommand(command, handler));
 
-  register('claudeSessions.refresh', sync);
+  register('claudeSessions.refresh', async () => {
+    await manager.syncActive().catch(() => undefined);
+    refreshAll();
+  });
 
   register('claudeSessions.saveCurrent', async () => {
     try {
@@ -262,6 +274,28 @@ export function activate(context: vscode.ExtensionContext): void {
     });
     if (label !== undefined) {
       await manager.rename(node.meta.id, label);
+    }
+  });
+
+  register('claudeSessions.removeAll', async () => {
+    const count = manager.list().length;
+    if (!count) {
+      void vscode.window.showInformationMessage('There are no saved Claude sessions.');
+      return;
+    }
+    const confirm = await vscode.window.showWarningMessage(
+      `Remove all ${count} saved Claude session${count === 1 ? '' : 's'}?`,
+      {
+        modal: true,
+        detail:
+          'Saved tokens are deleted from this machine. Claude Code stays signed in to its current account. ' +
+          'Run this before uninstalling the extension: uninstalling does not delete saved sessions.',
+      },
+      'Remove All',
+    );
+    if (confirm === 'Remove All') {
+      await manager.removeAll();
+      void vscode.window.showInformationMessage('All saved Claude sessions were removed.');
     }
   });
 

@@ -13,7 +13,9 @@ export async function readFileIfExists(file: string): Promise<string | undefined
 }
 
 /** Writes via temp file + rename so readers never see a half-written file. */
-export async function writeFileAtomic(file: string, data: string, mode?: number): Promise<void> {
+export async function writeFileAtomic(target: string, data: string, mode?: number): Promise<void> {
+  // Write through symlinks (e.g. a dotfiles-managed ~/.claude.json) instead of replacing them.
+  const file = await fs.realpath(target).catch(() => target);
   await fs.mkdir(path.dirname(file), { recursive: true });
   let fileMode = mode;
   if (fileMode === undefined) {

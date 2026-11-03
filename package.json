@@ -31,6 +31,13 @@
     "onStartupFinished"
   ],
   "main": "./dist/extension.js",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "This extension reads and writes Claude Code credentials, so it only runs in trusted workspaces."
+    },
+    "virtualWorkspaces": false
+  },
   "contributes": {
     "viewsContainers": {
       "activitybar": [
@@ -93,6 +100,12 @@
         "icon": "$(trash)"
       },
       {
+        "command": "claudeSessions.removeAll",
+        "title": "Remove All Saved Sessions…",
+        "category": "Claude Accounts",
+        "icon": "$(clear-all)"
+      },
+      {
         "command": "claudeSessions.refresh",
         "title": "Refresh",
         "category": "Claude Accounts",
@@ -115,6 +128,11 @@
           "command": "claudeSessions.refresh",
           "when": "view == claudeSessions.accounts",
           "group": "navigation@3"
+        },
+        {
+          "command": "claudeSessions.removeAll",
+          "when": "view == claudeSessions.accounts",
+          "group": "9_danger@1"
         }
       ],
       "view/item/context": [
@@ -185,16 +203,19 @@
         },
         "claudeSessions.configDir": {
           "type": "string",
+          "scope": "machine",
           "default": "",
           "description": "Override the Claude config directory. Leave empty to use CLAUDE_CONFIG_DIR or your home directory."
         },
         "claudeSessions.keychainService": {
           "type": "string",
+          "scope": "machine",
           "default": "Claude Code-credentials",
           "description": "macOS only: Keychain service name Claude Code stores its credentials under."
         },
         "claudeSessions.loginCommand": {
           "type": "string",
+          "scope": "machine",
           "default": "claude",
           "description": "Terminal command used to sign in to a new account when adding one."
         }

@@ -19,6 +19,8 @@ export interface ProfileMeta {
   lastUsedAt?: number;
   accessTokenExpiresAt?: number;
   refreshTokenExpiresAt?: number;
+  /** The saved tokens turned out to belong to another account; sign in again. */
+  invalid?: boolean;
 }
 
 /** Secret payload of a saved session, kept in VS Code Secret Storage. */
@@ -26,6 +28,8 @@ export interface ProfileSecret {
   /** Raw credentials JSON exactly as Claude Code stored it. */
   credentials: string;
   oauthAccount: OAuthAccount;
+  /** Tokens saved before the most recent sync, kept so a bad sync can be undone. */
+  previousCredentials?: string;
 }
 
 /** The login Claude Code is currently using on this machine. */
@@ -36,6 +40,7 @@ export interface LiveLogin {
 }
 
 export interface TokenInfo {
+  organizationUuid?: string;
   accessTokenExpiresAt?: number;
   refreshTokenExpiresAt?: number;
   subscriptionType?: string;
@@ -48,11 +53,13 @@ export function profileIdFor(account: OAuthAccount): string {
 /** Reads expiry/plan info from a credentials blob without exposing tokens. */
 export function parseTokenInfo(raw: string): TokenInfo {
   try {
-    const oauth = JSON.parse(raw)?.claudeAiOauth;
+    const parsed = JSON.parse(raw);
+    const oauth = parsed?.claudeAiOauth;
     if (!oauth || typeof oauth !== 'object') {
       return {};
     }
     return {
+      organizationUuid: typeof parsed.organizationUuid === 'string' ? parsed.organizationUuid : undefined,
       accessTokenExpiresAt: typeof oauth.expiresAt === 'number' ? oauth.expiresAt : undefined,
       refreshTokenExpiresAt:
         typeof oauth.refreshTokenExpiresAt === 'number' ? oauth.refreshTokenExpiresAt : undefined,
