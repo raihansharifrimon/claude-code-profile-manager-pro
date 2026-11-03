@@ -1,0 +1,225 @@
+{
+  "name": "claude-account-manager",
+  "displayName": "Claude Account Manager",
+  "description": "Save multiple Claude Code login sessions on your machine and switch between accounts instantly, without signing in again. Community project, not affiliated with Anthropic.",
+  "version": "0.1.0",
+  "publisher": "raihansharifrimon",
+  "author": "Raihan Sharif Rimon",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/raihansharifrimon/claude-account-manager"
+  },
+  "bugs": {
+    "url": "https://github.com/raihansharifrimon/claude-account-manager/issues"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "claude",
+    "claude code",
+    "account",
+    "switcher",
+    "session",
+    "login"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "claudeSessions",
+          "title": "Claude Accounts",
+          "icon": "media/activity.svg"
+        }
+      ]
+    },
+    "views": {
+      "claudeSessions": [
+        {
+          "id": "claudeSessions.accounts",
+          "name": "Accounts"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "claudeSessions.accounts",
+        "contents": "No saved Claude accounts yet.\n[Save Current Login](command:claudeSessions.saveCurrent)\n[Add Another Account](command:claudeSessions.addAccount)\nSessions are stored only on this machine, in your OS keychain via VS Code Secret Storage."
+      }
+    ],
+    "commands": [
+      {
+        "command": "claudeSessions.saveCurrent",
+        "title": "Save Current Login",
+        "category": "Claude Accounts",
+        "icon": "$(save)"
+      },
+      {
+        "command": "claudeSessions.addAccount",
+        "title": "Add Account…",
+        "category": "Claude Accounts",
+        "icon": "$(add)"
+      },
+      {
+        "command": "claudeSessions.switch",
+        "title": "Switch Account…",
+        "category": "Claude Accounts",
+        "icon": "$(arrow-swap)"
+      },
+      {
+        "command": "claudeSessions.switchTo",
+        "title": "Switch to This Account",
+        "category": "Claude Accounts",
+        "icon": "$(log-in)"
+      },
+      {
+        "command": "claudeSessions.rename",
+        "title": "Rename…",
+        "category": "Claude Accounts",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "claudeSessions.remove",
+        "title": "Remove Saved Session",
+        "category": "Claude Accounts",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "claudeSessions.refresh",
+        "title": "Refresh",
+        "category": "Claude Accounts",
+        "icon": "$(refresh)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "claudeSessions.addAccount",
+          "when": "view == claudeSessions.accounts",
+          "group": "navigation@1"
+        },
+        {
+          "command": "claudeSessions.saveCurrent",
+          "when": "view == claudeSessions.accounts",
+          "group": "navigation@2"
+        },
+        {
+          "command": "claudeSessions.refresh",
+          "when": "view == claudeSessions.accounts",
+          "group": "navigation@3"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "claudeSessions.switchTo",
+          "when": "view == claudeSessions.accounts && viewItem == profile.inactive",
+          "group": "inline@1"
+        },
+        {
+          "command": "claudeSessions.saveCurrent",
+          "when": "view == claudeSessions.accounts && viewItem == live.unsaved",
+          "group": "inline@1"
+        },
+        {
+          "command": "claudeSessions.switchTo",
+          "when": "view == claudeSessions.accounts && viewItem == profile.inactive",
+          "group": "1_main@1"
+        },
+        {
+          "command": "claudeSessions.rename",
+          "when": "view == claudeSessions.accounts && viewItem =~ /^profile\\./",
+          "group": "1_main@2"
+        },
+        {
+          "command": "claudeSessions.remove",
+          "when": "view == claudeSessions.accounts && viewItem =~ /^profile\\./",
+          "group": "2_danger@1"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "claudeSessions.switchTo",
+          "when": "false"
+        },
+        {
+          "command": "claudeSessions.rename",
+          "when": "false"
+        },
+        {
+          "command": "claudeSessions.remove",
+          "when": "false"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Claude Account Manager",
+      "properties": {
+        "claudeSessions.reloadAfterSwitch": {
+          "type": "string",
+          "enum": [
+            "ask",
+            "always",
+            "never"
+          ],
+          "enumDescriptions": [
+            "Ask whether to reload the window after switching accounts.",
+            "Always reload the window so the Claude Code extension picks up the new account.",
+            "Never reload automatically."
+          ],
+          "default": "ask",
+          "description": "What to do after switching accounts. The Claude Code extension reads credentials at startup, so a reload is usually needed."
+        },
+        "claudeSessions.autoSyncIntervalMinutes": {
+          "type": "number",
+          "default": 5,
+          "minimum": 0,
+          "description": "How often (minutes) to copy refreshed tokens of the active account into its saved session. 0 disables periodic sync (sync still happens before every switch)."
+        },
+        "claudeSessions.configDir": {
+          "type": "string",
+          "default": "",
+          "description": "Override the Claude config directory. Leave empty to use CLAUDE_CONFIG_DIR or your home directory."
+        },
+        "claudeSessions.keychainService": {
+          "type": "string",
+          "default": "Claude Code-credentials",
+          "description": "macOS only: Keychain service name Claude Code stores its credentials under."
+        },
+        "claudeSessions.loginCommand": {
+          "type": "string",
+          "default": "claude",
+          "description": "Terminal command used to sign in to a new account when adding one."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run check-types && node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "package": "npm run check-types && node esbuild.mjs --production",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run",
+    "vsce:package": "vsce package"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^20.19.0",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.2.0",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.14.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^3.2.4"
+  }
+}
