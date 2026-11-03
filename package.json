@@ -6,6 +6,7 @@
   "publisher": "raihansharifrimon",
   "author": "Raihan Sharif Rimon",
   "license": "MIT",
+  "icon": "media/icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/raihansharifrimon/claude-account-manager"
